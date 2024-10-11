@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Continuous Location Tracking with Plotly Map</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+
+<h2>Click the button to start tracking your location continuously:</h2>
+<button onclick="startTracking()">Start Tracking</button>
+<button onclick="stopTracking()">Stop Tracking</button>
+<p id="location-info"></p>
+
+<div id="map" style="width:100%;height:400px;"></div>
+
+<script>
+var watchId;
+var latitudeData = [];
+var longitudeData = [];
+
+// Initialize Plotly map
+var mapboxToken = 'YOUR_MAPBOX_ACCESS_TOKEN';  // Replace with your Mapbox token
+
+var trace = {
+    type: 'scattermapbox',
+    mode: 'markers+lines',
+    lat: latitudeData,
+    lon: longitudeData,
+    marker: { size: 8 },
+    line: { width: 2 },
+    name: 'Location'
+};
+
+var layout = {
+    mapbox: {
+        center: { lat: 0, lon: 0 },  // Initial center, will update dynamically
+        zoom: 15,
+        style: 'streets',  // Mapbox style
+    },
+    title: 'Device Location Tracking',
+    showlegend: false
+};
+
+var data = [trace];
+
+Plotly.newPlot('map', data, layout, {mapboxAccessToken: mapboxToken});
+
+function startTracking() {
+    if (navigator.geolocation) {
+        watchId = navigator.geolocation.watchPosition(updatePosition, showError, {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 5000
+        });
+    } else {
+        document.getElementById("location-info").innerHTML = "Geolocation is not supported by this browser.";
+    }
+}
+
+function updatePosition(position) {
+    var latitude = position.coords.latitude;
+    var longitude = position.coords.longitude;
+
+    document.getElementById("location-info").innerHTML = 
+        "Latitude: " + latitude + "<br>Longitude: " + longitude;
+
+    // Update data arrays
+    latitudeData.push(latitude);
+    longitudeData.push(longitude);
+
+    // Update the map's center to the current position
+    Plotly.relayout('map', {
+        'mapbox.center.lat': latitude,
+        'mapbox.center.lon': longitude
+    });
+
+    // Update the plot
+    Plotly.update('map', {
+        lat: [latitudeData],
+        lon: [longitudeData]
+    });
+}
+
+function showError(error) {
+    switch(error.code) {
+        case error.PERMISSION_DENIED:
+            document.getElementById("location-info").innerHTML = "User denied the request for Geolocation.";
+            break;
+        case error.POSITION_UNAVAILABLE:
+            document.getElementById("location-info").innerHTML = "Location information is unavailable.";
+            break;
+        case error.TIMEOUT:
+            document.getElementById("location-info").innerHTML = "The request to get user location timed out.";
+            break;
+        case error.UNKNOWN_ERROR:
+            document.getElementById("location-info").innerHTML = "An unknown error occurred.";
+            break;
+    }
+}
+
+function stopTracking() {
+    if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+        document.getElementById("location-info").innerHTML += "<br>Tracking stopped.";
+    }
+}
+</script>
+
+</body>
+</html>
