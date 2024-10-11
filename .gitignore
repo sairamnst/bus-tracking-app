@@ -5,10 +5,10 @@
 /backend/node_modules
 
 # testing
-/busapp/coverage
+# /busapp/coverage
 
 # production
-/busapp/build
+# /busapp/build
 
 # misc
 .DS_Store
